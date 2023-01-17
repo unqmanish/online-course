@@ -105,7 +105,7 @@ class Question(models.Model):
     # Foreign key to lesson
     # question text
     # question grade/mark
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="questions")
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
     question_text= models.CharField(max_length=255, null=False)
     grade = models.IntegerField(null=False)
 
@@ -126,7 +126,7 @@ class Question(models.Model):
     # Indicate if this choice of the question is a correct one or not
     # Other fields and methods you would like to design
 class Choice(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="choices")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
     choice_text= models.CharField(max_length=66, null=False)
     is_correct = models.BooleanField()
 

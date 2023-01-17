@@ -116,11 +116,10 @@ def submit(request, course_id):
     course = Course.objects.get(pk=course_id)
     enrollment = Enrollment.objects.get(user=user, course=course)
     submitted_anwsers = extract_answers(request)
-    bulk_list = list()
-    for id in submitted_anwsers:
-        bulk_list.append(Submission(enrollment=enrollment,choice=Choice.objects.get(pk=id)))
-    submissons = Submission.objects.bulk_create(bulk_list)
-    return HttpResponseRedirect(reverse("show_exam_result"))
+    submisson = Submission.objects.create(enrollment=enrollment)
+    submisson.save()
+    submisson.choices.add(*submitted_anwsers)
+    return HttpResponseRedirect(reverse(viewname='onlinecourse:show_exam_result', args=(course_id, submisson.id)))
 
 
 # <HINT> A example method to collect the selected choices from the exam form from the request object
@@ -143,16 +142,21 @@ def extract_answers(request):
 def show_exam_result(request, course_id, submission_id):
     course = Course.objects.get(pk=course_id)
     submission = Submission.objects.get(pk=submission_id)
-    selected_ids = submission.choices.all().values('id')
+    selected_ids = list()
+    for choice in submission.choices.all().values('id'):
+        selected_ids.append(choice['id'])
     questions = Question.objects.filter(lesson__in=course.lesson_set.all())
-    total = questions.aggregrate(Sum('grade'))
+    total = questions.aggregate(total=Sum('grade')).get('total')
     score = 0
     for question in questions:
         is_get_score = question.is_get_score(selected_ids)
         if is_get_score:
             score += question.grade
-    render(request, 'onlinecourse/exam_result_bootstrap.html', {
+
+    grade = int((score / total ) * 100)
+    print(selected_ids)
+    return render(request, 'onlinecourse/exam_result_bootstrap.html', {
         "selected_ids" : selected_ids,
-        "course" : coures,
-        "grade" : total / score
+        "course" : course,
+        "grade" : grade
     })
